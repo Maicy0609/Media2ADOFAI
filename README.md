@@ -4,4 +4,4 @@
 ```bash
 pip install pillow
 ```
-安装所需的依赖，然后把run.跑起来就行了
+安装所需的依赖，然后把run.py跑起来就行了
