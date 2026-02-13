@@ -14,7 +14,7 @@ except ImportError:
     PIL_AVAILABLE = False
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import format_value, clean_path, resolve_output_path, get_script_dir, pixel_to_hex
+from utils import format_value, clean_path, resolve_output_path, get_script_dir, pixel_to_hex, print_progress
 from config import get_adofai_settings, DEFAULT_Y_OFFSET
 
 
@@ -88,6 +88,7 @@ def generate_image_adofai(image_path, output_path, y_offset=None):
             
             actions = []
             
+            print("生成像素事件...")
             for idx in range(1, total_pixels):
                 floor = idx
                 
@@ -106,6 +107,10 @@ def generate_image_adofai(image_path, output_path, y_offset=None):
                     y_value = -y_offset
                     pos_action = (floor, f'\t\t{{ "floor": {floor}, "eventType": "PositionTrack", "positionOffset": [{-width}, {y_value}], "relativeTo": [0, "ThisTile"], "justThisTile": false, "editorOnly": false}}')
                     actions.append(pos_action)
+                
+                # 每5%更新进度
+                if idx % max(1, total_pixels // 20) == 0 or idx == total_pixels - 1:
+                    print_progress(idx, total_pixels - 1, prefix="  处理像素", suffix="")
             
             actions.sort(key=lambda x: x[0])
             

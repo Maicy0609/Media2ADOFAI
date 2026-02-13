@@ -17,7 +17,7 @@ except ImportError:
     PIL_AVAILABLE = False
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import natural_sort_key, format_value, pixel_to_hex
+from utils import natural_sort_key, format_value, pixel_to_hex, print_progress, print_progress_inline
 from config import (
     get_adofai_settings,
     DEFAULT_FPS, DEFAULT_ZOOM, ROW_OFFSET,
@@ -58,7 +58,7 @@ def generate_video_adofai(frame_paths, output_path, fps=None, zoom=None, verbose
                 img = img.convert('RGBA')
             frames.append(img)
             if verbose:
-                print(f"  [{i+1}/{len(frame_paths)}] {os.path.basename(path)}")
+                print_progress(i + 1, len(frame_paths), prefix="  读取帧", suffix="")
         
         # 检查所有帧尺寸是否一致
         width, height = frames[0].size
@@ -143,16 +143,16 @@ def generate_video_adofai(frame_paths, output_path, fps=None, zoom=None, verbose
         
         # Frame区: 从 Floor (num_frames + 1) 开始
         current_floor = num_frames + 1
+        total_pixels = num_frames * pixels_per_frame
+        processed_pixels = 0
         
         for frame_idx in range(num_frames):
             pixels = list(frames[frame_idx].getdata())
             
-            if verbose:
-                print(f"  处理帧 {frame_idx+1}/{num_frames}...")
-            
             for pixel_idx in range(pixels_per_frame):
                 floor = current_floor
                 current_floor += 1
+                processed_pixels += 1
                 
                 hex_color = pixel_to_hex(*pixels[pixel_idx])
                 
@@ -181,6 +181,10 @@ def generate_video_adofai(frame_paths, output_path, fps=None, zoom=None, verbose
                         y_offset = -ROW_OFFSET
                         pos_action = (floor, f'\t\t{{ "floor": {floor}, "eventType": "PositionTrack", "positionOffset": [{x_offset}, {y_offset}], "relativeTo": [0, "ThisTile"], "justThisTile": false, "editorOnly": false}}')
                         actions.append(pos_action)
+            
+            # 每帧结束后更新进度
+            if verbose:
+                print_progress(processed_pixels, total_pixels, prefix="  生成像素", suffix=f"帧{frame_idx+1}/{num_frames}")
         
         # 按floor编号排序
         actions.sort(key=lambda x: x[0])
@@ -260,8 +264,8 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=None, zoom=None, verb
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
             frames.append(img)
-            if verbose and ((i + 1) % 10 == 0):
-                print(f"  [{i+1}/{len(frame_paths)}]")
+            if verbose:
+                print_progress(i + 1, len(frame_paths), prefix="  读取帧", suffix="")
         
         # 检查所有帧尺寸是否一致
         width, height = frames[0].size
@@ -334,6 +338,7 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=None, zoom=None, verb
         
         # 收集Floor 1的RecolorTrack
         floor1_actions = []
+        total_recolor = num_frames * pixels_per_frame
         
         for frame_idx in range(num_frames):
             angle_offset = frame_idx * d
@@ -345,8 +350,10 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=None, zoom=None, verb
                 
                 floor1_actions.append(f'\t\t{{ "floor": 1, "eventType": "RecolorTrack", "startTile": [{tile_index}, "Start"], "endTile": [{tile_index}, "Start"], "gapLength": 0, "duration": 0, "trackColorType": "Single", "trackColor": "{hex_color}", "secondaryTrackColor": "ffffff", "trackColorAnimDuration": 2, "trackColorPulse": "None", "trackPulseLength": 10, "trackStyle": "Basic", "trackGlowIntensity": 100, "angleOffset": {angle_offset}, "ease": "Linear", "eventTag": ""}}')
             
-            if verbose and ((frame_idx + 1) % 10 == 0 or frame_idx == num_frames - 1):
-                print(f"  帧 {frame_idx + 1}/{num_frames}: {len(floor1_actions)} 个RecolorTrack")
+            # 每帧结束后更新进度
+            if verbose:
+                current_count = (frame_idx + 1) * pixels_per_frame
+                print_progress(current_count, total_recolor, prefix="  生成RecolorTrack", suffix=f"帧{frame_idx+1}/{num_frames}")
         
         if verbose:
             print("\n生成PositionTrack（换行）...")
