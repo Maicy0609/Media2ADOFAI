@@ -6,6 +6,8 @@ ADOFAI 工具集 - 交互式入口
 
 import os
 import sys
+import glob
+import re
 from pathlib import Path
 
 # 添加项目根目录到路径
@@ -13,11 +15,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 检查依赖
 try:
+    import cv2
     CV2_OK = True
 except ImportError:
     CV2_OK = False
 
 try:
+    from PIL import Image
     PIL_OK = True
 except ImportError:
     PIL_OK = False
@@ -29,7 +33,7 @@ from core import (
     generate_video_adofai,
     generate_video_adofai_v2
 )
-from utils import find_part_folders, find_image_files
+from utils import natural_sort_key, find_part_folders, find_image_files, print_progress
 from config import DEFAULT_FPS, DEFAULT_ZOOM, DEFAULT_Y_OFFSET
 
 
@@ -186,7 +190,8 @@ def menu_grouped_to_adofai(use_v2=False):
         print("  未找到part*")
         return
     
-    print(f"  找到{len(parts)}个分组")
+    total_parts = len(parts)
+    print(f"  找到{total_parts}个分组")
     
     out_dir = Path(__file__).parent / f"{Path(folder).name}_levels_{ver}"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -194,20 +199,33 @@ def menu_grouped_to_adofai(use_v2=False):
     fps = get_input("FPS", DEFAULT_FPS, float, lambda x: (x > 0, "必须>0"))
     zoom = get_input("Zoom", DEFAULT_ZOOM, int, lambda x: (x > 0, "必须>0"))
     
+    print(f"\n开始处理 {total_parts} 个分组...\n")
+    
     ok = 0
-    for pname, frames in parts:
+    for idx, (pname, frames) in enumerate(parts, 1):
         out = out_dir / f"{pname}.adofai"
+        frame_count = len(frames)
+        
+        # 显示当前part进度
+        print(f"[{idx}/{total_parts}] {pname} ({frame_count} 帧)")
+        
         try:
             if use_v2:
-                generate_video_adofai_v2([str(f) for f in frames], str(out), fps, zoom, verbose=False)
+                generate_video_adofai_v2([str(f) for f in frames], str(out), fps, zoom, verbose=True)
             else:
-                generate_video_adofai([str(f) for f in frames], str(out), fps, zoom, verbose=False)
-            print(f"  {pname}: OK")
+                generate_video_adofai([str(f) for f in frames], str(out), fps, zoom, verbose=True)
             ok += 1
         except Exception as e:
-            print(f"  {pname}: 失败 - {e}")
+            print(f"  ❌ 失败: {e}")
+        
+        # 显示总体进度
+        print_progress(idx, total_parts, prefix="  总进度", suffix="")
+        print()  # 换行
     
-    print(f"完成: {ok}/{len(parts)} → {out_dir}")
+    print(f"\n{'='*50}")
+    print(f"完成: {ok}/{total_parts} 个分组成功")
+    print(f"输出目录: {out_dir}")
+    print(f"{'='*50}")
 
 
 # ========== 主菜单 ==========

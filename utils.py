@@ -6,6 +6,7 @@ ADOFAI 工具集 - 公共工具函数
 
 import re
 import os
+import sys
 from pathlib import Path
 
 
@@ -176,3 +177,62 @@ def format_file_size(size_bytes):
             return f"{size_bytes:.1f}{unit}"
         size_bytes /= 1024
     return f"{size_bytes:.1f}TB"
+
+
+def print_progress(current, total, prefix="", suffix="", bar_width=40, refresh_percent=5):
+    """
+    打印进度条（每refresh_percent%刷新一次）
+    
+    参数:
+        current: 当前进度
+        total: 总数
+        prefix: 前缀文字
+        suffix: 后缀文字
+        bar_width: 进度条宽度
+        refresh_percent: 刷新百分比（默认5%）
+    """
+    if total == 0:
+        return
+    
+    percent = current / total * 100
+    
+    # 检查是否需要刷新（每refresh_percent%刷新一次，或者完成时）
+    checkpoint = int(percent / refresh_percent)
+    prev_checkpoint = int((current - 1) / total * 100 / refresh_percent) if current > 1 else -1
+    
+    # 只在达到新的检查点或完成时刷新
+    if checkpoint > prev_checkpoint or current == total:
+        filled = int(bar_width * current / total)
+        bar = "█" * filled + "░" * (bar_width - filled)
+        
+        # 使用\r回到行首，覆盖之前的输出
+        line = f"\r{prefix} |{bar}| {percent:5.1f}% ({current}/{total}) {suffix}"
+        sys.stdout.write(line)
+        
+        if current == total:
+            sys.stdout.write("\n")
+        
+        sys.stdout.flush()
+
+
+def print_progress_inline(current, total, prefix=""):
+    """
+    打印单行进度（简洁版，每5%刷新）
+    
+    参数:
+        current: 当前进度
+        total: 总数
+        prefix: 前缀文字
+    """
+    if total == 0:
+        return
+    
+    percent = current / total * 100
+    checkpoint = int(percent / 5)
+    prev_checkpoint = int((current - 1) / total * 100 / 5) if current > 1 else -1
+    
+    if checkpoint > prev_checkpoint or current == total:
+        print(f"\r  {prefix} {percent:5.1f}% ({current}/{total})", end="")
+        if current == total:
+            print()  # 完成时换行
+        sys.stdout.flush()
