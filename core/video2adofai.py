@@ -365,7 +365,7 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=None, zoom=None, verb
             pixel_idx = floor - 1
             col = pixel_idx % width
             
-            if col == width - 1 and floor < total_floors:
+            if col == 0 and floor < total_floors:
                 x_offset = -width
                 y_offset = -ROW_OFFSET
                 other_actions[floor] = f'\t\t{{ "floor": {floor}, "eventType": "PositionTrack", "positionOffset": [{x_offset}, {y_offset}], "relativeTo": [0, "ThisTile"], "justThisTile": false, "editorOnly": false}}'
