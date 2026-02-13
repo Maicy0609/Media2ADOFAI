@@ -63,7 +63,8 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=DEFAULT_FPS, zoom=DEF
         
         num_frames = len(frames)
         pixels_per_frame = width * height
-        
+        position_value = [width / 2, -height / 2]
+
         # BPM固定为60
         bpm = 60
         
@@ -113,7 +114,7 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=DEFAULT_FPS, zoom=DEF
             ("previewSongStart", 0),
             ("previewSongDuration", 10),
             ("seizureWarning", False),
-            ("levelDesc", f"Video {width}×{height} {fps}FPS {num_frames}frames (RecolorTrack)"),
+            ("levelDesc", "Video"),
             ("levelTags", "video"),
             ("artistLinks", ""),
             ("speedTrialAim", 0),
@@ -156,8 +157,8 @@ def generate_video_adofai_v2(frame_paths, output_path, fps=DEFAULT_FPS, zoom=DEF
             ("lockRot", False),
             ("loopBG", False),
             ("scalingRatio", 100),
-            ("relativeTo", "Player"),
-            ("position", [0, 0]),
+            ("relativeTo", "Global"),
+            ("position", position_value),
             ("rotation", 0),
             ("zoom", zoom),
             ("pulseOnFloor", True),
